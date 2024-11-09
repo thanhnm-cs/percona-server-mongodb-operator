@@ -16,6 +16,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	api "github.com/percona/percona-server-mongodb-operator/pkg/apis/psmdb/v1"
+	"github.com/percona/percona-server-mongodb-operator/pkg/psmdb"
 	"github.com/percona/percona-server-mongodb-operator/pkg/psmdb/mongo"
 )
 
@@ -86,7 +87,7 @@ func (r *ReconcilePerconaServerMongoDB) reconcileCustomUsers(ctx context.Context
 			user.PasswordSecretRef.Key = "password"
 		}
 
-		sec, err := getUserSecret(ctx, r.client, cr, user.PasswordSecretRef.Name)
+		sec, err := psmdb.GetUserSecret(ctx, r.client, cr, user.PasswordSecretRef.Name)
 		if err != nil {
 			log.Error(err, "failed to get user secret", "user", user)
 			continue
