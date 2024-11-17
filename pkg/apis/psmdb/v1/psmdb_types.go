@@ -414,7 +414,7 @@ func (m *MultiAZ) WithSidecarVolumes(log logr.Logger, volumes []corev1.Volume) [
 
 	for _, v := range m.SidecarVolumes {
 		if _, ok := names[v.Name]; ok {
-			log.Info("Wrong sidecar volume name, it is skipped", "volumeName", v.Name)
+			log.Error(errors.New("Wrong sidecar volume name, it is skipped"), "volumeName", v.Name)
 			continue
 		}
 
@@ -435,7 +435,7 @@ func (m *MultiAZ) WithSidecarPVCs(log logr.Logger, pvcs []corev1.PersistentVolum
 
 	for _, p := range m.SidecarPVCs {
 		if _, ok := names[p.Name]; ok {
-			log.Info("Wrong sidecar PVC name, it is skipped", "PVCName", p.Name)
+			log.Error(errors.New("Wrong sidecar PVC name, it is skipped"), "PVCName", p.Name)
 			continue
 		}
 
