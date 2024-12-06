@@ -18,18 +18,42 @@ spec:
     schedule: "0 2 * * *"
     setFCV: false
   secrets:
-    # ssl: my-cluster-name-ssl-ghn
     users: my-cluster-name-secrets
     encryptionKey: my-cluster-name-mongodb-encryption-key
   pmm:
-    enabled: false
+    enabled: true
     image: percona/pmm-client:2.43.2
     serverHost: monitoring-service
+    mongodParams: --enable-all-collectors
+    mongosParams: --enable-all-collectors
   replsets:
   - name: hot-rs0
     size: 3
     affinity:
       antiAffinityTopologyKey: "kubernetes.io/hostname"
+      advanced:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.google.com/gke-boot-disk
+                operator: In
+                values:
+                - pd-ssd
+    topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: percona-server-mongodb
+        maxSkew: 1
+        topologyKey: topology.gke.io/zone
+        whenUnsatisfiable: DoNotSchedule
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: percona-server-mongodb
+        maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+
     podDisruptionBudget:
       maxUnavailable: 1
     expose:
@@ -38,22 +62,49 @@ spec:
     resources:
       limits:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
       requests:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
     volumeSpec:
       persistentVolumeClaim:
         resources:
           requests:
             storage: 3Gi
         storageClassName: premium-rwo
-
+    configuration: |
+      operationProfiling:
+        mode: slowOp
+        slowOpThresholdMs: 200
+        rateLimit: 100
 
   - name: hot-rs1
     size: 3
     affinity:
       antiAffinityTopologyKey: "kubernetes.io/hostname"
+      advanced:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.google.com/gke-boot-disk
+                operator: In
+                values:
+                - pd-ssd
+    topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: percona-server-mongodb
+        maxSkew: 1
+        topologyKey: topology.gke.io/zone
+        whenUnsatisfiable: DoNotSchedule
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: percona-server-mongodb
+        maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+
     podDisruptionBudget:
       maxUnavailable: 1
     expose:
@@ -62,21 +113,35 @@ spec:
     resources:
       limits:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
       requests:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
     volumeSpec:
       persistentVolumeClaim:
         resources:
           requests:
             storage: 3Gi
         storageClassName: premium-rwo
+    configuration: |
+      operationProfiling:
+        mode: slowOp
+        slowOpThresholdMs: 200
+        rateLimit: 100
 
   - name: cold-rs0
     size: 3
     affinity:
       antiAffinityTopologyKey: "kubernetes.io/hostname"
+      advanced:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.google.com/gke-boot-disk
+                operator: In
+                values:
+                - pd-standard
     podDisruptionBudget:
       maxUnavailable: 1
     expose:
@@ -85,15 +150,20 @@ spec:
     resources:
       limits:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
       requests:
         cpu: "300m"
-        memory: "0.5G"
+        memory: "1Gi"
     volumeSpec:
       persistentVolumeClaim:
         resources:
           requests:
             storage: 3Gi
+    configuration: |
+      operationProfiling:
+        mode: slowOp
+        slowOpThresholdMs: 200
+        rateLimit: 100
 
 
     nonvoting:
@@ -106,8 +176,8 @@ spec:
 
   sharding:
     enabled: true
-#    balancer:
-#      enabled: true
+    balancer:
+      enabled: true
     configsvrReplSet:
       size: 3
       affinity:
@@ -133,6 +203,15 @@ spec:
       size: 3
       affinity:
         antiAffinityTopologyKey: "kubernetes.io/hostname"
+        advanced:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: cloud.google.com/gke-spot
+                  operator: In
+                  values:
+                  - "true"
       podDisruptionBudget:
         maxUnavailable: 1
       resources:
@@ -153,7 +232,7 @@ spec:
           - 101.99.32.236/32
           - 27.75.100.116/32
   backup:
-    enabled: true
+    enabled: false
     image: percona/percona-backup-mongodb:2.7.0-multi
     pitr:
       enabled: false
